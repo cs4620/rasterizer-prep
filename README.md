@@ -26,11 +26,17 @@ Then run:
 ### macOS (clang++)
 
 ```
-clang++ test.cpp -o triangle -framework Cocoa -framework OpenGL -framework QuartzCore
+clang++ -x objective-c++ -framework Cocoa -framework OpenGL test.cpp -o triangle
 ```
 
 Then run:
 
 ```
 ./triangle
+```
+
+Note, if thi above command does not compile properly on MacOS, you can try a more verbose version:
+
+```
+clang++ -x objective-c++ -std=c++17 -framework Cocoa -framework OpenGL -framework QuartzCore test.cpp -o triangle
 ```
