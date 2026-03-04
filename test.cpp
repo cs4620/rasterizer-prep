@@ -7,15 +7,16 @@
 #include "file_util.h"
 
 // --- STATE ---
-static struct {
+struct State {
     sg_pipeline pip;
     sg_bindings bind;
     sg_pass_action pass_action;
-} state;
+};
+static struct State state;
 
 void init(void) {
-    sg_desc desc = {};
-    desc.logger.func = slog_func;
+    sg_desc desc;
+    memset(&desc, 0, sizeof(desc));
     desc.environment = sglue_environment();
     sg_setup(&desc);
 
@@ -26,22 +27,29 @@ void init(void) {
          0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
         -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
     };
-    sg_buffer_desc buf_desc = {};
+    sg_buffer_desc buf_desc;
+    memset(&buf_desc, 0, sizeof(buf_desc));
+
     buf_desc.data = SG_RANGE(vertices);
     state.bind.vertex_buffers[0] = sg_make_buffer(&buf_desc);
 
     // 2. Create Shader from .glsl files
     char* vs_src = load_file("vertex.glsl");
     char* fs_src = load_file("fragment.glsl");
-    sg_shader_desc shd_desc = {};
+
+    sg_shader_desc shd_desc;
+    memset(&shd_desc, 0, sizeof(shd_desc));
+
     shd_desc.vertex_func.source = vs_src;
     shd_desc.fragment_func.source = fs_src;
     sg_shader shd = sg_make_shader(&shd_desc);
+
     free(vs_src);
     free(fs_src);
 
     // 3. Create Pipeline (Defines how to interpret the buffer)
-    sg_pipeline_desc pip_desc = {};
+    sg_pipeline_desc pip_desc;
+    memset(&pip_desc, 0, sizeof(pip_desc));
     pip_desc.shader = shd;
     pip_desc.layout.attrs[0].format = SG_VERTEXFORMAT_FLOAT3; // position
     pip_desc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT4; // color
@@ -49,11 +57,15 @@ void init(void) {
 
     // Background color (light gray)
     state.pass_action.colors[0].load_action = SG_LOADACTION_CLEAR;
-    state.pass_action.colors[0].clear_value = { 0.2f, 0.2f, 0.2f, 1.0f };
+    state.pass_action.colors[0].clear_value.r = 0.2f;
+    state.pass_action.colors[0].clear_value.g = 0.2f;
+    state.pass_action.colors[0].clear_value.b = 0.2f;
+    state.pass_action.colors[0].clear_value.a = 1.0f;
 }
 
 void frame(void) {
-    sg_pass pass = {};
+    sg_pass pass;
+    memset(&pass, 0, sizeof(pass));
     pass.action = state.pass_action;
     pass.swapchain = sglue_swapchain();
     sg_begin_pass(&pass);
@@ -69,13 +81,13 @@ void cleanup(void) {
 }
 
 sapp_desc sokol_main(int argc, char* argv[]) {
-    sapp_desc app = {};
+    sapp_desc app;
+    memset(&app, 0, sizeof(app));
     app.init_cb = init;
     app.frame_cb = frame;
     app.cleanup_cb = cleanup;
     app.width = 800;
     app.height = 600;
     app.window_title = "Sokol Triangle";
-    app.logger.func = slog_func;
     return app;
 }
