@@ -23,23 +23,6 @@ struct vs_params_t {
     float view_proj[16];  // view-projection matrix
 };
 
-// --- Simple math helpers (column-major mat4) ---
-static void mat4_identity(float* m) {
-    for (int i = 0; i < 16; i++) m[i] = 0.0f;
-    m[0] = m[5] = m[10] = m[15] = 1.0f;
-}
-
-// Perspective projection (column-major)
-static void mat4_perspective(float* m, float fovy_rad, float aspect, float znear, float zfar) {
-    for (int i = 0; i < 16; i++) m[i] = 0.0f;
-    float f = 1.0f / tanf(fovy_rad / 2.0f);
-    m[0]  = f / aspect;
-    m[5]  = f;
-    m[10] = (zfar + znear) / (znear - zfar);
-    m[11] = -1.0f;
-    m[14] = (2.0f * zfar * znear) / (znear - zfar);
-}
-
 // --- STATE ---
 struct State {
     sg_pipeline pip;
@@ -57,11 +40,6 @@ void init(void) {
     sg_setup(&desc);
 
     // --- 1. Hardcoded cube mesh ---
-    // 24 vertices (4 per face, each with its own face normal and UVs)
-    // Each vertex: position (3) + normal (3) + uv (2) = 8 floats
-    // UVs map each face to the full [0,1] x [0,1] texture range:
-    //   (0,0) = bottom-left, (1,0) = bottom-right,
-    //   (1,1) = top-right,   (0,1) = top-left
     float vertices[] = {
         //  x,  y,  z,  nx, ny, nz,  u, v
         // Front face (z = +1), normal (0, 0, 1)
@@ -154,7 +132,7 @@ void init(void) {
     pip_desc.layout.attrs[1].format = SG_VERTEXFORMAT_FLOAT3;  // normal
     pip_desc.layout.attrs[2].format = SG_VERTEXFORMAT_FLOAT2;  // uv
 
-    // Enable depth testing so the sphere renders correctly in 3D
+    // Enable depth testing so the cube renders correctly in 3D
     pip_desc.depth.compare = SG_COMPAREFUNC_LESS_EQUAL;
     pip_desc.depth.write_enabled = true;
 
@@ -189,18 +167,22 @@ void frame(void) {
     float c = cosf(angle);
     float s = sinf(angle);
 
-    // model = translate * rx  (column-major)
+    // model = translate * rx  (column-major, written row-by-row to match paper notation)
     float* m = vs_params.model;
-    for (int i = 0; i < 16; i++) m[i] = 0.0f;
-    m[0]  = 1.0f;
-    m[5]  = c;    m[6]  = s;
-    m[9]  = -s;   m[10] = c;
-    m[14] = -5.0f;  // tz
-    m[15] = 1.0f;
+    m[0] = 1.0f;  m[4] = 0.0f;  m[8]  = 0.0f;   m[12] = 0.0f;
+    m[1] = 0.0f;  m[5] = c;     m[9]  = -s;     m[13] = 0.0f;
+    m[2] = 0.0f;  m[6] = s;     m[10] = c;      m[14] = -5.0f;
+    m[3] = 0.0f;  m[7] = 0.0f;  m[11] = 0.0f;   m[15] = 1.0f;
 
-    // Projection matrix: 45-degree FOV, correct aspect ratio
-    float aspect = (float)sapp_width() / (float)sapp_height();
-    mat4_perspective(vs_params.view_proj, 45.0f * (float)M_PI / 180.0f, aspect, 0.1f, 100.0f);
+    // Projection matrix: 45-degree FOV, znear=0.1, zfar=100
+    float fovy = 45.0f * (float)M_PI / 180.0f;
+    float f = 1.0f / tanf(fovy / 2.0f);
+    float znear = 0.1f, zfar = 100.0f;
+    float* p = vs_params.view_proj;
+    p[0] = f;     p[4] = 0.0f;  p[8]  = 0.0f;                            p[12] = 0.0f;
+    p[1] = 0.0f;  p[5] = f;     p[9]  = 0.0f;                            p[13] = 0.0f;
+    p[2] = 0.0f;  p[6] = 0.0f;  p[10] = (zfar + znear) / (znear - zfar); p[14] = (2.0f * zfar * znear) / (znear - zfar);
+    p[3] = 0.0f;  p[7] = 0.0f;  p[11] = -1.0f;                           p[15] = 0.0f;
 
     // Upload uniforms to slot 0
     sg_range params_range = { &vs_params, sizeof(vs_params) };
@@ -223,8 +205,8 @@ sapp_desc sokol_main(int argc, char* argv[]) {
     app.frame_cb = frame;
     app.cleanup_cb = cleanup;
     app.width = 800;
-    app.height = 600;
-    app.window_title = "Sphere Rasterizer";
+    app.height = 800;
+    app.window_title = "Rasterizer";
     app.logger.func = slog_func;
     return app;
 }
