@@ -14,29 +14,29 @@ A minimal OpenGL 3.3 triangle using the [Sokol](https://github.com/floooh/sokol)
 ### Windows (MinGW g++)
 
 ```
-g++ test.cpp -o triangle.exe -lgdi32 -lopengl32
+g++ rasterizer.cpp -o rasterizer.exe -lgdi32 -lopengl32
 ```
 
 Then run:
 
 ```
-.\triangle.exe
+.\rasterizer.exe
 ```
 
 ### macOS (clang++)
 
 ```
-clang++ -x objective-c++ -framework Cocoa -framework OpenGL test.cpp -o triangle
+clang++ -x objective-c++ -framework Cocoa -framework OpenGL rasterizer.cpp -o rasterizer
 ```
 
 Then run:
 
 ```
-./triangle
+./rasterizer
 ```
 
 Note, if thi above command does not compile properly on MacOS, you can try a more verbose version:
 
 ```
-clang++ -x objective-c++ -std=c++17 -framework Cocoa -framework OpenGL -framework QuartzCore test.cpp -o triangle
+clang++ -x objective-c++ -std=c++17 -framework Cocoa -framework OpenGL -framework QuartzCore rasterizer.cpp -o rasterizer
 ```
