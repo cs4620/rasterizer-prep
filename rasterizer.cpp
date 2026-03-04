@@ -9,7 +9,7 @@
 #include "./includes/sokol_glue.h"  // Platform glue code
 #include "./includes/file_util.h"   // Utility for loading shader files
 #include <cmath>                     // For math functions
-#include <cstring>                   // For memset/memcpy
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -25,13 +25,13 @@ struct vs_params_t {
 
 // --- Simple math helpers (column-major mat4) ---
 static void mat4_identity(float* m) {
-    memset(m, 0, 16 * sizeof(float));
+    for (int i = 0; i < 16; i++) m[i] = 0.0f;
     m[0] = m[5] = m[10] = m[15] = 1.0f;
 }
 
 // Perspective projection (column-major)
 static void mat4_perspective(float* m, float fovy_rad, float aspect, float znear, float zfar) {
-    memset(m, 0, 16 * sizeof(float));
+    for (int i = 0; i < 16; i++) m[i] = 0.0f;
     float f = 1.0f / tanf(fovy_rad / 2.0f);
     m[0]  = f / aspect;
     m[5]  = f;
@@ -59,37 +59,41 @@ void init(void) {
     // --- 1. Hardcoded cube mesh ---
     // 24 vertices (4 per face, each with its own face normal and UVs)
     // Each vertex: position (3) + normal (3) + uv (2) = 8 floats
+    // UVs map each face to the full [0,1] x [0,1] texture range:
+    //   (0,0) = bottom-left, (1,0) = bottom-right,
+    //   (1,1) = top-right,   (0,1) = top-left
     float vertices[] = {
+        //  x,  y,  z,  nx, ny, nz,  u, v
         // Front face (z = +1), normal (0, 0, 1)
-        -1, -1,  1,   0,  0,  1,   0, 0,
-         1, -1,  1,   0,  0,  1,   1, 0,
-         1,  1,  1,   0,  0,  1,   1, 1,
-        -1,  1,  1,   0,  0,  1,   0, 1,
+        -1, -1,  1,   0,  0,  1,   0, 0, // bottom-left
+         1, -1,  1,   0,  0,  1,   1, 0, // bottom-right
+         1,  1,  1,   0,  0,  1,   1, 1, // top-right
+        -1,  1,  1,   0,  0,  1,   0, 1, // top-left
         // Back face (z = -1), normal (0, 0, -1)
-         1, -1, -1,   0,  0, -1,   0, 0,
-        -1, -1, -1,   0,  0, -1,   1, 0,
-        -1,  1, -1,   0,  0, -1,   1, 1,
-         1,  1, -1,   0,  0, -1,   0, 1,
+         1, -1, -1,   0,  0, -1,   0, 0, // bottom-left  (looking at back from outside)
+        -1, -1, -1,   0,  0, -1,   1, 0, // bottom-right
+        -1,  1, -1,   0,  0, -1,   1, 1, // top-right
+         1,  1, -1,   0,  0, -1,   0, 1, // top-left
         // Top face (y = +1), normal (0, 1, 0)
-        -1,  1,  1,   0,  1,  0,   0, 0,
-         1,  1,  1,   0,  1,  0,   1, 0,
-         1,  1, -1,   0,  1,  0,   1, 1,
-        -1,  1, -1,   0,  1,  0,   0, 1,
+        -1,  1,  1,   0,  1,  0,   0, 0, // front-left
+         1,  1,  1,   0,  1,  0,   1, 0, // front-right
+         1,  1, -1,   0,  1,  0,   1, 1, // back-right
+        -1,  1, -1,   0,  1,  0,   0, 1, // back-left
         // Bottom face (y = -1), normal (0, -1, 0)
-        -1, -1, -1,   0, -1,  0,   0, 0,
-         1, -1, -1,   0, -1,  0,   1, 0,
-         1, -1,  1,   0, -1,  0,   1, 1,
-        -1, -1,  1,   0, -1,  0,   0, 1,
+        -1, -1, -1,   0, -1,  0,   0, 0, // back-left
+         1, -1, -1,   0, -1,  0,   1, 0, // back-right
+         1, -1,  1,   0, -1,  0,   1, 1, // front-right
+        -1, -1,  1,   0, -1,  0,   0, 1, // front-left
         // Right face (x = +1), normal (1, 0, 0)
-         1, -1,  1,   1,  0,  0,   0, 0,
-         1, -1, -1,   1,  0,  0,   1, 0,
-         1,  1, -1,   1,  0,  0,   1, 1,
-         1,  1,  1,   1,  0,  0,   0, 1,
+         1, -1,  1,   1,  0,  0,   0, 0, // bottom-front
+         1, -1, -1,   1,  0,  0,   1, 0, // bottom-back
+         1,  1, -1,   1,  0,  0,   1, 1, // top-back
+         1,  1,  1,   1,  0,  0,   0, 1, // top-front
         // Left face (x = -1), normal (-1, 0, 0)
-        -1, -1, -1,  -1,  0,  0,   0, 0,
-        -1, -1,  1,  -1,  0,  0,   1, 0,
-        -1,  1,  1,  -1,  0,  0,   1, 1,
-        -1,  1, -1,  -1,  0,  0,   0, 1,
+        -1, -1, -1,  -1,  0,  0,   0, 0, // bottom-back
+        -1, -1,  1,  -1,  0,  0,   1, 0, // bottom-front
+        -1,  1,  1,  -1,  0,  0,   1, 1, // top-front
+        -1,  1, -1,  -1,  0,  0,   0, 1, // top-back
     };
 
     // 36 indices (6 faces * 2 triangles * 3 vertices)
@@ -180,41 +184,19 @@ void frame(void) {
     // --- Build model and projection matrices each frame ---
     vs_params_t vs_params;
 
-    // Model (world) matrix: rotate 45° around X, then 45° around Y, then translate into -Z
+    // Model (world) matrix: rotate 45° around X, then translate into -Z
     float angle = 45.0f * (float)M_PI / 180.0f;
     float c = cosf(angle);
     float s = sinf(angle);
 
-    // Rotation around Y (column-major)
-    float ry[16];
-    memset(ry, 0, sizeof(ry));
-    ry[0] = c;  ry[2] = s;
-    ry[5] = 1.0f;
-    ry[8] = -s; ry[10] = c;
-    ry[15] = 1.0f;
-
-    // Rotation around X (column-major)
-    float rx[16];
-    memset(rx, 0, sizeof(rx));
-    rx[0] = 1.0f;
-    rx[5] = c;  rx[6] = s;
-    rx[9] = -s; rx[10] = c;
-    rx[15] = 1.0f;
-
-    // model = translate * ry * rx  (apply rx first, then ry, then translate)
-    // First: rot = ry * rx
-    float rot[16];
-    for (int col = 0; col < 4; col++) {
-        for (int row = 0; row < 4; row++) {
-            float sum = 0.0f;
-            for (int k = 0; k < 4; k++)
-                sum += ry[k * 4 + row] * rx[col * 4 + k];
-            rot[col * 4 + row] = sum;
-        }
-    }
-    // Copy rotation into model, then add translation
-    memcpy(vs_params.model, rot, sizeof(rot));
-    vs_params.model[14] = -5.0f;  // tz
+    // model = translate * rx  (column-major)
+    float* m = vs_params.model;
+    for (int i = 0; i < 16; i++) m[i] = 0.0f;
+    m[0]  = 1.0f;
+    m[5]  = c;    m[6]  = s;
+    m[9]  = -s;   m[10] = c;
+    m[14] = -5.0f;  // tz
+    m[15] = 1.0f;
 
     // Projection matrix: 45-degree FOV, correct aspect ratio
     float aspect = (float)sapp_width() / (float)sapp_height();
