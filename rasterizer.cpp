@@ -9,6 +9,9 @@
 #include "./includes/sokol_glue.h"  // Platform glue code
 #include "./includes/file_util.h"   // Utility for loading shader files
 #include <cmath>                     // For math functions
+#include <iostream>
+
+using namespace std;
 
 
 #ifndef M_PI
@@ -162,27 +165,18 @@ void frame(void) {
     // --- Build model and projection matrices each frame ---
     vs_params_t vs_params;
 
-    // Model (world) matrix: rotate 45° around X, then translate into -Z
-    float angle = 45.0f * (float)M_PI / 180.0f;
-    float c = cosf(angle);
-    float s = sinf(angle);
-
-    // model = translate * rx  (column-major, written row-by-row to match paper notation)
     float* m = vs_params.model;
     m[0] = 1.0f;  m[4] = 0.0f;  m[8]  = 0.0f;   m[12] = 0.0f;
-    m[1] = 0.0f;  m[5] = c;     m[9]  = -s;     m[13] = 0.0f;
-    m[2] = 0.0f;  m[6] = s;     m[10] = c;      m[14] = -5.0f;
+    m[1] = 0.0f;  m[5] = 1.0f;  m[9]  = 0.0f;   m[13] = 0.0f;
+    m[2] = 0.0f;  m[6] = 0.0f;  m[10] = 1.0f;   m[14] = -5.0f;
     m[3] = 0.0f;  m[7] = 0.0f;  m[11] = 0.0f;   m[15] = 1.0f;
-
-    // Projection matrix: 45-degree FOV, znear=0.1, zfar=100
-    float fovy = 45.0f * (float)M_PI / 180.0f;
-    float f = 1.0f / tanf(fovy / 2.0f);
-    float znear = 0.1f, zfar = 100.0f;
+    
     float* p = vs_params.view_proj;
-    p[0] = f;     p[4] = 0.0f;  p[8]  = 0.0f;                            p[12] = 0.0f;
-    p[1] = 0.0f;  p[5] = f;     p[9]  = 0.0f;                            p[13] = 0.0f;
-    p[2] = 0.0f;  p[6] = 0.0f;  p[10] = (zfar + znear) / (znear - zfar); p[14] = (2.0f * zfar * znear) / (znear - zfar);
-    p[3] = 0.0f;  p[7] = 0.0f;  p[11] = -1.0f;                           p[15] = 0.0f;
+    p[0] = 1.0f;  p[4] = 0.0f;  p[8]  = 0.0f;    p[12] = 0.0f;
+    p[1] = 0.0f;  p[5] = 1.0f;  p[9]  = 0.0f;    p[13] = 0.0f;
+    p[2] = 0.0f;  p[6] = 0.0f;  p[10] = -1.0f;   p[14] = 0;
+    p[3] = 0.0f;  p[7] = 0.0f;  p[11] = -1.0f;   p[15] = 0.0f;
+
 
     // Upload uniforms to slot 0
     sg_range params_range = { &vs_params, sizeof(vs_params) };
