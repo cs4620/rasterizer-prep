@@ -35,12 +35,47 @@ struct State {
 };
 struct State state;
 
+//Define a struct for Vector3
+//Define a struct for Vector2
+//Define a struct for a vertex
+//Define a struct for a face
+
 
 void init(void) {
     sg_desc desc = {};
     desc.environment = sglue_environment();
     desc.logger.func = slog_func;          // Hook up Sokol logger for debug output
     sg_setup(&desc);
+
+    //Create a list of locations, uvs, normals, and faces
+    
+    //Load the obj file using load_file
+    //Get the lines of the file using split
+
+    //Go through each line...
+    //Ignore lines that don't start with v, vt, vn, or f
+    //Split the line on ' '
+    //If its a v, vt, or vn, create the appropriate struct and push it on the appropriate list
+    //If its a f, read each vertex definition. 
+    //For each vertex definition in that face, get the index for the location, uv, and normal (remembering to subtract 1!)
+    //... then compile the information for each face value using the three vertices
+    //... then put the final face on the appropriate list
+
+    //Create an array of floats for the vertices
+    //Create an array of ints for the indices
+
+    //Populate the vertices array with the information from the definition of your faces
+    //Populate the indices array.
+
+    //Tip: function stof converts a string to a float
+    //Tip: function stoi converts a string to an int
+
+    //Tip: You can't use SG_RANGE() with dynamically created arrays..
+    //... instead use vbuf_desc.data = { vertices, (size_t)(x*sizeof(float))) };
+    //... where x is the number of entries in your vertices array
+    //... and the use ibuf_desc.data = { indices, (size_t)(y * sizeof(uint16_t)) };
+    //... where y is the number of entries in your indices array
+
 
     // --- 1. Hardcoded cube mesh ---
     float vertices[] = {

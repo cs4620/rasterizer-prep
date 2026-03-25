@@ -3,6 +3,11 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>                   // For math functions
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
 
 static char* load_file(const char* path) {
     FILE* f = fopen(path, "rb");
@@ -18,6 +23,20 @@ static char* load_file(const char* path) {
     buf[len] = '\0';
     fclose(f);
     return buf;
+}
+
+static std::vector<std::string> split(const char *src, char delimiter = '\n')
+{
+    std::stringstream ss(src);
+    std::vector<std::string> strings;
+    std::string line;
+
+    while (std::getline(ss, line, delimiter))
+    {
+        strings.push_back(line);
+    }
+
+    return strings;
 }
 
 #endif
